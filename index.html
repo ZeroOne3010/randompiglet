@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <style type="text/css">
+    body {
+      color: #aaaaaa;
+    }
+    a {
+      color: #aaaaff;
+    }
+  </style>
+  <title>Random Piglet</title>
+  <script type="text/javascript">
+    window.pAsyncInit = function () {
+      PDK.init({
+        appId: "4934915181342896375",
+        cookie: true
+      });
+    };
+
+    (function (d, s, id) {
+      var js, pjs = d.getElementsByTagName(s)[0];
+      if (d.getElementById(id)) { return; }
+      js = d.createElement(s); js.id = id;
+      js.src = "//assets.pinterest.com/sdk/sdk.js";
+      pjs.parentNode.insertBefore(js, pjs);
+    }(document, 'script', 'pinterest-jssdk'));
+
+
+    var requestPins = function () {
+      var pins = [];
+      return new Promise((resolve, reject) => {
+        console.log("Making a request... Pins: ", pins);
+        PDK.request('/boards/cinloo/cute-pigs/pins/', { fields: 'image,color,id,note', limit: 100 }, function (response) {
+          console.log('Pinterest response received');
+          if (!response || response.error) {
+            alert('Error occurred');
+            reject(response.error);
+          } else {
+            console.log("Pins before: ", pins);
+            console.log(response);
+            pins = pins.concat(response.data);
+            if (response.hasNext) {
+              console.log("There's more. Pins now: ", pins);
+              response.next();
+            } else {
+              console.log("Resolving pins: ", pins);
+              resolve(pins);
+            }
+          }
+        });
+      });
+    }
+
+    var hideLoginLink = function () {
+      document.getElementById('loginLink').style.visibility = 'hidden';
+    }
+    var showRefreshLinks = function () {
+      document.getElementById('refreshLink').style.visibility = 'visible';
+      document.getElementById('autoRefreshLink').style.visibility = 'visible';
+    }
+
+    var pins = [];
+
+    var setRandomImage = function () {
+      const randomPin = pins[Math.floor(Math.random() * pins.length)];
+      const image = randomPin.image.original;
+      const imageElement = document.getElementById('randomImage');
+      imageElement.style.width = image.width;
+      imageElement.style.height = image.height;
+      imageElement.src = image.url;
+      imageElement.alt = image.note;
+      document.body.style.backgroundColor = image.color;
+    }
+
+    var setAutoRefresh = function (milliseconds) {
+      document.getElementById('autoRefreshIndicator').style.visibility = 'visible';
+      setInterval(setRandomImage, milliseconds);
+    }
+
+    var login = function () {
+      PDK.login({ scope: 'read_public' }, function () {
+        console.log("Logged in");
+        requestPins().then(retrievedPins => {
+          pins = retrievedPins;
+          setRandomImage();
+          hideLoginLink();
+          showRefreshLinks();
+        });
+      });
+    }
+  </script>
+</head>
+
+<body>
+  <a href="javascript:login()" id="loginLink">Login</a>
+  <a href="javascript:setRandomImage()" id="refreshLink" style="visibility: hidden;">Refresh</a>
+  <a href="javascript:setAutoRefresh(60000)" id="autoRefreshLink" style="visibility: hidden;">Auto-refresh</a>
+  <span id="autoRefreshIndicator" style="visibility: hidden;">Auto-refresh active!</span>
+  <br/>
+  <img id="randomImage" src="#" />
+</body>
+
+</html>
